@@ -1,0 +1,76 @@
+# email_utils.py
+import threading
+from django.core.mail import send_mail,EmailMultiAlternatives
+from django.conf import settings
+from django.template.loader import render_to_string
+from django.utils.html import strip_tags
+
+
+def send_email(subject, message, recipient_list):
+    send_mail(
+        subject,
+        message,
+        settings.EMAIL_HOST_USER,
+        recipient_list,
+        fail_silently=False,
+    )
+    
+class EmailThread(threading.Thread):
+    def __init__(self, subject, message, recipient_list):
+        self.subject = subject
+        self.message = message
+        self.recipient_list = recipient_list
+        threading.Thread.__init__(self)
+
+    def run(self):
+        send_email(self.subject, self.message, self.recipient_list)
+
+def send_email_async(subject, message, recipient_list):
+    EmailThread(subject, message, recipient_list).start()
+
+
+
+# context = {
+#         'service': "Gym Service",
+#         'customer_name': "Umair Shaikh",
+#         'date': "13-08-2024",
+#         'start_time': "9:00 AM",
+#         'end_time': "10:00 PM",
+#         'address':"Gulnaz Villa Kausarbag Kondhwa",
+#         'city': "Pune Maharstarta",
+#         'zipcode': "411 048",
+#         'notes': "test notes",
+#     }
+
+
+
+# send_html_email(
+#     subject='Your Booking Confirmation Email',
+#     template_name='/home/user/Desktop/vecto-backend/portals/templates/appointment_booking.html',
+#     context=context,
+#     recipient_list=['33azharoddin@gmail.com','dhirajkamale4898@gmail.com']
+# )
+
+
+def send_html_email(subject, template_name, context, recipient_list):
+    """
+    Sends an email with the given subject, using the specified template and context.
+
+    Parameters:
+    subject (str): The subject of the email.
+    template_name (str): The path to the HTML template.
+    context (dict): The context to render the template with.
+    recipient_list (list): List of recipient email addresses.
+    """
+    html_message = render_to_string(template_name, context)
+    plain_message = strip_tags(html_message)
+    from_email = settings.EMAIL_HOST_USER
+
+    send_mail(
+        subject,
+        plain_message,
+        from_email,
+        recipient_list,
+        fail_silently=False,
+        html_message=html_message
+    )
